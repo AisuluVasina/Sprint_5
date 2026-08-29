@@ -1,0 +1,23 @@
+# Виртуальное окружение
+venv/
+.venv/
+
+# Файлы кэша Python
+__pycache__/
+*.py[cod]
+*\$py.class
+
+# Файлы IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Артефакты сборки
+build/
+dist/
+*.egg-info/
