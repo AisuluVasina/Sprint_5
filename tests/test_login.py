@@ -1,104 +1,164 @@
 import pytest
-from generators import generate_unique_email, generate_password
-from locators import RegistrationPageLocators, LoginPageLocators, MainPageLocators
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from locators import MainPageLocators, LoginPageLocators, RegistrationPageLocators
+from config import MAIN_URL, LOGIN_URL, REGISTER_URL
 
-def register_user(driver, email, password):
-    driver.get("https://stellarburgers.education-services.ru/register")
-    driver.find_element(*RegistrationPageLocators.NAME_FIELD).send_keys("Aisylu Vasina")
-    driver.find_element(*RegistrationPageLocators.EMAIL_FIELD).send_keys(email)
-    driver.find_element(*RegistrationPageLocators.PASSWORD_FIELD).send_keys(password)
-    driver.find_element(*RegistrationPageLocators.SUBMIT_BTN).click()
-    wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD))
+WAIT_TIMEOUT = 10
 
-@pytest.mark.login
-def test_login_from_main_page(driver):
-    #Вход по кнопке «Войти в аккаунт»
-    email = generate_unique_email()
-    password = generate_password(6)
-    
-    register_user(driver, email, password)
-    
-    driver.get("https://stellarburgers.education-services.ru/")
-    driver.find_element(*MainPageLocators.LOGIN_BTN_MAIN).click()
-    
-    wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD))
-    
-    driver.find_element(*LoginPageLocators.EMAIL_FIELD).send_keys(email)
-    driver.find_element(*LoginPageLocators.PASSWORD_FIELD).send_keys(password)
-    driver.find_element(*LoginPageLocators.SUBMIT_BTN).click()
-    
-    wait.until(EC.url_contains("/profile"))
-    assert "profile" in driver.current_url, "Не удалось войти через главную страницу"
+def wait_for_element_clickable(driver, locator):
+    # Ожидание кликабельности элемента
+    wait = WebDriverWait(driver, WAIT_TIMEOUT)
+    return wait.until(EC.element_to_be_clickable(locator))
 
-@pytest.mark.login
-def test_login_from_personal_cabinet_link(driver):
-    #Вход через кнопку «Личный кабинет»
-    email = generate_unique_email()
-    password = generate_password(6)
-    
-    register_user(driver, email, password)
-    
-    driver.get("https://stellarburgers.education-services.ru/")
-    driver.find_element(*MainPageLocators.PERSONAL_CABINET_LINK).click()
-    
-    wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD))
-    
-    driver.find_element(*LoginPageLocators.EMAIL_FIELD).send_keys(email)
-    driver.find_element(*LoginPageLocators.PASSWORD_FIELD).send_keys(password)
-    driver.find_element(*LoginPageLocators.SUBMIT_BTN).click()
+def wait_for_url_to_be(driver, expected_url):
+    # Ожидание полного совпадения URL
+    wait = WebDriverWait(driver, WAIT_TIMEOUT)
+    wait.until(EC.url_to_be(expected_url))
 
-@pytest.mark.login
-def test_login_from_registration_form(driver):
-    #Вход через кнопку в форме регистрации
-    email = generate_unique_email()
-    password = generate_password(6)
-    register_user(driver, email, password)
-    
-    driver.get("https://stellarburgers.education-services.ru/register")
-    
-    wait = WebDriverWait(driver, 10)
-    login_link_in_reg = wait.until(EC.element_to_be_clickable(RegistrationPageLocators.LOGIN_LINK_IN_REG))
-    login_link_in_reg.click()
-    
-    wait.until(EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD))
-    
-    driver.find_element(*LoginPageLocators.EMAIL_FIELD).send_keys(email)
-    driver.find_element(*LoginPageLocators.PASSWORD_FIELD).send_keys(password)
-    driver.find_element(*LoginPageLocators.SUBMIT_BTN).click()
+def wait_for_url_contains(driver, substring):
+    # Ожидание подстроки в URL
+    wait = WebDriverWait(driver, WAIT_TIMEOUT)
+    wait.until(lambda d: substring in d.current_url)
 
-    wait.until(EC.url_contains("/profile"))
-    assert "profile" in driver.current_url, "Не удалось войти через форму регистрации"
+def close_modal_if_present(driver):
 
-@pytest.mark.login
-def test_login_from_forgot_password_form(driver):
-    #Вход через кнопку в форме восстановления пароля
-    email = generate_unique_email()
-    password = generate_password(6)
-    register_user(driver, email, password)
-    
-    driver.get("https://stellarburgers.education-services.ru/login")
-    
-    wait = WebDriverWait(driver, 10)
-    forgot_pass_link = wait.until(EC.element_to_be_clickable(LoginPageLocators.FORGOT_PASSWORD_LINK))
-    forgot_pass_link.click()
-    
-    back_to_login_link = wait.until(EC.element_to_be_clickable(LoginPageLocators.BACK_TO_LOGIN_LINK))
-    back_to_login_link.click()
-    
-    wait.until(EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD))
-    
-    driver.find_element(*LoginPageLocators.EMAIL_FIELD).send_keys(email)
-    driver.find_element(*LoginPageLocators.PASSWORD_FIELD).send_keys(password)
-    driver.find_element(*LoginPageLocators.SUBMIT_BTN).click()
-    
-    wait.until(EC.url_contains("/profile"))
-    assert "profile" in driver.current_url, "Не удалось войти через форму восстановления пароля"
+    try:
+        # Ждём, пока оверлей модалки появится (или таймаут пройдёт — тогда except)
+        overlay = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located(MainPageLocators.MODAL_OVERLAY)
+        )
+        # Сначала пробуем найти кнопку закрытия (крестик)
+        try:
+            close_btn = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable(MainPageLocators.MODAL_CLOSE_BUTTON)
+            )
+            close_btn.click()
+        except:
+            # Если крестика нет — кликаем по оверлею (фону)
+            driver.execute_script("arguments[0].click();", overlay)
+        # Ждём, пока модалка исчезнет
+        WebDriverWait(driver, 5).until(EC.invisibility_of_element_located(MainPageLocators.MODAL_OVERLAY))
+    except:
+        # Если модалки не было — просто продолжаем
+        pass
 
-    wait.until(EC.url_contains("/profile"))
+class TestLoginScenarios:
 
-    driver.quit()
+    def test_login_via_main_page_button(self, driver, registered_user):
+            # 1: Вход через кнопку «Войти в аккаунт»
+            email, password = registered_user
+            driver.get(MAIN_URL)
+            close_modal_if_present(driver) 
+    
+            # Находим и кликаем кнопку входа
+            login_btn = wait_for_element_clickable(driver, MainPageLocators.LOGIN_BTN_MAIN)
+            login_btn.click()
+    
+            # Ждем перехода на страницу логина
+            wait_for_url_contains(driver, "/login")
+    
+            # Вводим Email
+            email_field = wait_for_element_clickable(driver, LoginPageLocators.EMAIL_FIELD)
+            email_field.clear()
+            email_field.send_keys(email)
+    
+            # Вводим Пароль
+            password_field = wait_for_element_clickable(driver, LoginPageLocators.PASSWORD_FIELD)
+            password_field.clear()
+            password_field.send_keys(password)
+    
+            # Нажимаем кнопку "Войти"
+            submit_btn = wait_for_element_clickable(driver, LoginPageLocators.SUBMIT_BTN)
+            submit_btn.click()
+
+            wait_for_url_to_be(driver, MAIN_URL)
+    
+    def test_login_via_personal_cabinet_link(self, driver, registered_user):
+          #Вход через ссылку «Личный кабинет»."""
+          email, password = registered_user
+          
+          # Переходим на главную страницу
+          driver.get(MAIN_URL)
+          close_modal_if_present(driver)
+  
+          # Находим и кликаем ссылку "Личный кабинет"
+          cabinet_link = wait_for_element_clickable(driver, MainPageLocators.PERSONAL_CABINET_LINK)
+          cabinet_link.click()
+  
+          # Ждем перехода на страницу логина
+          wait_for_url_contains(driver, "/login")
+          close_modal_if_present(driver) # Проверяем модалку и на странице логина
+  
+          # Вводим данные и логинимся
+          email_field = wait_for_element_clickable(driver, LoginPageLocators.EMAIL_FIELD)
+          email_field.clear()
+          email_field.send_keys(email)
+  
+          password_field = wait_for_element_clickable(driver, LoginPageLocators.PASSWORD_FIELD)
+          password_field.clear()
+          password_field.send_keys(password)
+  
+          submit_btn = wait_for_element_clickable(driver, LoginPageLocators.SUBMIT_BTN)
+          submit_btn.click()
+  
+          # Ждем возврата на главную страницу (это подтверждает успешный вход)
+          wait_for_url_to_be(driver, MAIN_URL)
+
+    def test_login_via_registration_form_link(self, driver, registered_user):
+        #Вход через ссылку в форме регистрации.
+        email, password = registered_user
+        driver.get(REGISTER_URL)
+        close_modal_if_present(driver)
+    
+        login_link_in_reg = wait_for_element_clickable(driver, RegistrationPageLocators.LOGIN_LINK_IN_REG)
+        login_link_in_reg.click()
+    
+        # Ждем перехода на страницу логина
+        wait_for_url_contains(driver, "/login")
+        close_modal_if_present(driver) # Проверяем модалку и на странице логина
+    
+        email_field = wait_for_element_clickable(driver, LoginPageLocators.EMAIL_FIELD)
+        email_field.clear()
+        email_field.send_keys(email)
+    
+        password_field = wait_for_element_clickable(driver, LoginPageLocators.PASSWORD_FIELD)
+        password_field.clear()
+        password_field.send_keys(password)
+    
+        submit_btn = wait_for_element_clickable(driver, LoginPageLocators.SUBMIT_BTN)
+        submit_btn.click()
+    
+        # Ждем возврата на главную страницу (это подтверждает успешный вход)
+        wait_for_url_to_be(driver, MAIN_URL)
+
+    def test_login_via_forgot_password_link(self, driver, registered_user):
+        #Вход через ссылку в форме восстановления пароля
+        email, password = registered_user
+        driver.get(LOGIN_URL)
+        close_modal_if_present(driver)
+    
+        forgot_link = wait_for_element_clickable(driver, LoginPageLocators.FORGOT_PASSWORD_LINK)
+        forgot_link.click()
+    
+        wait_for_url_contains(driver, "/forgot-password")
+        close_modal_if_present(driver)
+    
+        back_to_login = wait_for_element_clickable(driver, LoginPageLocators.BACK_TO_LOGIN_LINK)
+        back_to_login.click()
+    
+        wait_for_url_contains(driver, "/login")
+    
+        email_field = wait_for_element_clickable(driver, LoginPageLocators.EMAIL_FIELD)
+        email_field.clear()
+        email_field.send_keys(email)
+            
+        password_field = wait_for_element_clickable(driver, LoginPageLocators.PASSWORD_FIELD)
+        password_field.clear()
+        password_field.send_keys(password)
+    
+        submit_btn = wait_for_element_clickable(driver, LoginPageLocators.SUBMIT_BTN)
+        submit_btn.click()
+            
+        wait_for_url_to_be(driver, MAIN_URL)

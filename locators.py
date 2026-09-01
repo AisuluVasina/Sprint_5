@@ -1,58 +1,67 @@
-class MainPageLocators:
-    # Кнопка «Войти в аккаунт» на главной
-    LOGIN_BTN_MAIN = ("css", "a[href='/login']")  
-    # Ссылка «Личный кабинет»
-    PERSONAL_CABINET_LINK = ("css", "a[href='/profile']")  # Ссылка «Личный кабинет»
-# Ссылка «Личный кабинет»
-    LOGIN_BTN_MAIN = ("css", "a[href='/login']")  
-    PERSONAL_CABINET_LINK = ("css", "a[href='/profile']") 
+from selenium.webdriver.common.by import By
 
+class MainPageLocators:
+    # Кнопки и ссылки
+    LOGIN_BTN_MAIN = (By.XPATH, "//button[text()='Войти в аккаунт']")
+    PERSONAL_CABINET_LINK = (By.XPATH, '//p[text() = "Личный Кабинет"]')
+    CONSTRUCTOR_LINK = (By.XPATH, "//a[.//p[contains(text(), 'Конструктор')]]")
+    # Логотип 
+    LOGO_IMG = By.XPATH, '//div[@class="AppHeader_header__logo__2D0X2"]'
+    #LOGO_LINK = (By.CSS_SELECTOR, 'div.AppHeader_header_logo_2D0X2 a[href="/"]') 
+    # Элементы модального окна
+    MODAL_OVERLAY = (By.CLASS_NAME, "Modal_modal_overlay__x2ZCr")
+    MODAL_CLOSE_BUTTON = (By.CLASS_NAME, "Modal_modal__close__TnseK")
+
+    # Заголовок "Соберите бургер" (для проверки главной)
+    BUN_HEADER = (By.XPATH, "//h1[text()='Соберите бургер']")
+    
 class LoginPageLocators:
     # Поле ввода email
-    EMAIL_FIELD = ("css", "input[type='email']")
+    EMAIL_FIELD = (By.XPATH, './/label[text()="Email"]/following-sibling::input')
     # Поле ввода пароля
-    PASSWORD_FIELD = ("css", "input[type='password']")
+    PASSWORD_FIELD = (By.XPATH, './/input[@name="Пароль"]')
     # Кнопка "Войти"
-    SUBMIT_BTN = ("css", "button[type='submit']")
-     # Сообщение об ошибке
-    ERROR_MSG = ("css", ".error-message")  
+    SUBMIT_BTN = (By.XPATH, './/button[text()="Войти"]')
+    # Сообщение об ошибке
+    ERROR_MSG = By.XPATH, '//p[text() = "Некорректный пароль"]'
+    # Восстановить пароль
+    FORGOT_PASSWORD_LINK = ("css selector", "a[href='/forgot-password']")
+    BACK_TO_LOGIN_LINK = ("css selector", "a[href='/login']") 
 
 # Элементы страницы регистрации
 class RegistrationPageLocators:
     # Поле ввода имени
-    NAME_FIELD = ("css", "input[name='name']")
+    NAME_FIELD = (By.XPATH, '//label[text()="Имя"]/following-sibling::input')
     # Поле ввода email
-    EMAIL_FIELD = ("css", "input[type='email']")
+    EMAIL_FIELD = (By.XPATH, './/label[text()="Email"]/following-sibling::input')
     # Поле ввода пароля
-    PASSWORD_FIELD = ("css", "input[type='password']")
+    PASSWORD_FIELD = (By.XPATH, './/input[@name="Пароль"]')
     # Кнопка "Зарегистрироваться"
-    SUBMIT_BTN = ("css", "button[type='submit']")
-    # Ссылка "Войти"
-    LOGIN_LINK_IN_REG = ("css", "a[href='/login']") 
+    SUBMIT_BTN = (By.XPATH, '//button[text() = "Зарегистрироваться"]')
+    # Кнопка "Войти"
+    LOGIN_LINK_IN_REG = By.XPATH, '//a[text() = "Войти"]'
     # ссылка "Забыли пароль"
-    FORGOT_PASSWORD_LINK = ("css", "a[href='/forgot-password']")
-    BACK_TO_LOGIN_LINK = ("css", "a[href='/login']")
+    FORGOT_PASSWORD_LINK = ("css selector", "a[href='/forgot-password']")
+    BACK_TO_LOGIN_LINK = ("css selector", "a[href='/login']")
 
 class PersonalCabinetLocators:
     # Кнопка «Выйти»
-    LOGOUT_BTN = ("css", "button[data-testid='logout']")
-    # Ссылка «Конструктор» 
-    CONSTRUCTOR_LINK = ("css", "a[href='/']")
-    # Логотип 
-    LOGO_IMG = ("css", "img[alt='Stellar Burgers']") 
+    LOGOUT_BTN = By.XPATH, '//button[@type = "button"]'
 
 class ConstructorLocators:
     # Вкладка "Булки"
-    BUNS_TAB = ("css", "[data-testid='buns-tab']")
+    BUNS_TAB = By.XPATH, '//span[text() = "Булки"]'
     # Вкладка "Соусы"
-    SAUCES_TAB = ("css", "[data-testid='sauces-tab']")
+    SAUCES_TAB = By.XPATH, '//span[text() = "Соусы"]'
+    #SAUCES_TAB = (By.XPATH, '//div[contains(text(), "Соусы")]')
+    #SAUCES_TAB = (By.XPATH, '//div[contains(.//text(), "Соусы")]')
+    #SAUCES_TAB = (By.XPATH, '//div[contains(text(), "Соусы")]')
     # Вкладка "Начинки"
-    TOPPINGS_TAB = ("css", "[data-testid='toppings-tab']")
+    TOPPINGS_TAB = By.XPATH, '//span[text() = "Начинки"]'
     
     # Первый элемент списка "Булки"
-    FIRST_BUN = ("css", "[data-testid='bun-item']") 
+    FIRST_BUN = ("xpath", "//a[.//img[@alt='Флюоресцентная булка R2-D3']]")
     # Первый элемент списка "Соусы"
-    FIRST_SAUCE = ("css", "[data-testid='sauce-item']")
+    FIRST_SAUCE = ("xpath", "//a[.//img[@alt='Соус Spicy-X']]")
     # Первый элемент списка "Начинки"
-    FIRST_TOPPING = ("css", "[data-testid='topping-item']") 
-
+    FIRST_TOPPING = ("xpath", "//a[.//img[@alt='Мясо бессмертных моллюсков Protostomia']]")

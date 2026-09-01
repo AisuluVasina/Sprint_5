@@ -1,77 +1,121 @@
+import time
 import pytest
+from config import REGISTER_URL, MAIN_URL, LOGIN_URL, PROFILE_URL 
 from generators import generate_unique_email, generate_password
-from locators import MainPageLocators, RegistrationPageLocators, LoginPageLocators, PersonalCabinetLocators
+from locators import RegistrationPageLocators, LoginPageLocators, MainPageLocators, PersonalCabinetLocators
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+# Убран импорт 'driver' из conftest! Он передается в тест автоматически.
+from conftest import close_modal_if_present, registered_user 
 
-def login_user(driver, email, password):
+class TestRegistration:
     
-    driver.get("https://stellarburgers.education-services.ru/login")
-    wait = WebDriverWait(driver, 10)
-    
-    wait.until(EC.element_to_be_clickable(LoginPageLocators.EMAIL_FIELD))
-    
-    driver.find_element(*LoginPageLocators.EMAIL_FIELD).send_keys(email)
-    driver.find_element(*LoginPageLocators.PASSWORD_FIELD).send_keys(password)
-    driver.find_element(*LoginPageLocators.SUBMIT_BTN).click()
-    
-    wait.until(EC.url_contains("/profile"))
+    def test_navigate_to_personal_cabinet_as_guest(self, driver, registered_user):
+        #Вход существующего пользователя и переход в личный кабинет.
+        driver.get(MAIN_URL)
+        close_modal_if_present(driver)
 
-@pytest.mark.navigation
-def test_full_navigation_flow(driver):
+        wait = WebDriverWait(driver, 15)
 
-    email = generate_unique_email()
-    password = generate_password(6)
-    wait = WebDriverWait(driver, 10)
+        # Клик по кнопке ЛК
+        profile_btn = wait.until(EC.element_to_be_clickable(MainPageLocators.PERSONAL_CABINET_LINK))
+        profile_btn.click()
 
-    # 1:Регистрация и переход в ЛК 
-    
-    driver.get("https://stellarburgers.education-services.ru/register")
-    wait.until(EC.element_to_be_clickable(RegistrationPageLocators.NAME_FIELD))
-    driver.find_element(*RegistrationPageLocators.NAME_FIELD).send_keys("Aisylu Vasina")
-    driver.find_element(*RegistrationPageLocators.EMAIL_FIELD).send_keys(email)
-    driver.find_element(*RegistrationPageLocators.PASSWORD_FIELD).send_keys(password)
-    driver.find_element(*RegistrationPageLocators.SUBMIT_BTN).click()
-    
-    login_user(driver, email, password)
+        # Ожидание и заполнение формы входа
+        email_field_locator = LoginPageLocators.EMAIL_FIELD
+        wait.until(EC.visibility_of_element_located(email_field_locator))
 
-    driver.get("https://stellarburgers.education-services.ru/")
-    
-    # Кликаем на ссылку «Личный кабинет» на главной
-    cab_link = wait.until(EC.element_to_be_clickable(MainPageLocators.PERSONAL_CABINET_LINK))
-    cab_link.click()
-    
-    # Проверяем, что мы попали в профиль
-    wait.until(EC.url_contains("/profile"))
-    assert "profile" in driver.current_url, "Не удалось перейти в личный кабинет с главной страницы"
+        email, password = registered_user
 
-    #2: Переход из ЛК в конструктор
-    
-    constructor_btn = wait.until(EC.element_to_be_clickable(PersonalCabinetLocators.CONSTRUCTOR_LINK))
-    constructor_btn.click()
-    wait.until(EC.url_contains("/"))
-    assert "profile" not in driver.current_url, "Не произошел переход из ЛК в конструктор по кнопке"
-    
-    # Возвращаемся в ЛК
-    driver.find_element(*MainPageLocators.PERSONAL_CABINET_LINK).click()
-    wait.until(EC.url_contains("/profile"))
+        email_field = wait.until(EC.element_to_be_clickable(email_field_locator))
+        email_field.clear()
+        email_field.send_keys(email)
 
-    logo = wait.until(EC.element_to_be_clickable(PersonalCabinetLocators.LOGO_IMG))
-    logo.click()
-    wait.until(EC.url_contains("/"))
-    assert "profile" not in driver.current_url, "Не произошел переход из ЛК в конструктор по логотипу"
+        password_field = wait.until(EC.element_to_be_clickable(LoginPageLocators.PASSWORD_FIELD))
+        password_field.clear()
+        password_field.send_keys(password)
 
-    #3: Выход из аккаунта
-    
-    # Возвращаемся в ЛК для проверки выхода
-    driver.find_element(*MainPageLocators.PERSONAL_CABINET_LINK).click()
-    wait.until(EC.url_contains("/profile"))
-    
-    logout_btn = wait.until(EC.element_to_be_clickable(PersonalCabinetLocators.LOGOUT_BTN))
-    logout_btn.click()
-    
-    # Проверяем, что мы на странице логина и кнопка выхода исчезла
-    wait.until(EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD))
-    assert "login" in driver.current_url, "Не произошел редирект на страницу входа после выхода"
-    
-    driver.quit()
+        submit_btn = wait.until(EC.element_to_be_clickable(LoginPageLocators.SUBMIT_BTN))
+        submit_btn.click()
+
+        wait.until(EC.url_to_be(MAIN_URL))
+        print(">>> УСПЕХ: Вход выполнен, находимся на главной странице.")
+
+        # Ещё раз кликаем по Личному кабинету
+        profile_btn_after_login = wait.until(EC.element_to_be_clickable(MainPageLocators.PERSONAL_CABINET_LINK))
+        profile_btn_after_login.click()
+
+        # ПРОВЕРКА
+        try:
+            wait.until(EC.url_to_be(PROFILE_URL))
+            print(">>> УСПЕХ: Переход в личный кабинет подтверждён!")
+        except Exception as e:
+            driver.save_screenshot("profile_navigation_failed.png")
+            raise AssertionError(f"Не удалось перейти в личный кабинет. Текущий URL: {driver.current_url}") from e
+
+    def test_navigate_to_constructor_from_cabinet_by_button(self, driver, logged_in_user):
+        #Переход из ЛК в конструктор.
+
+        driver.find_element(*MainPageLocators.PERSONAL_CABINET_LINK).click()
+
+        # Ждём загрузки страницы профиля
+        WebDriverWait(driver, 15).until(EC.url_to_be(PROFILE_URL))
+
+        #Закрываем модальное окно
+        close_modal_if_present(driver)
+        
+        # кликаем по "Конструктор"
+        WebDriverWait(driver, 15).until(EC.element_to_be_clickable(MainPageLocators.CONSTRUCTOR_LINK))
+        driver.find_element(*MainPageLocators.CONSTRUCTOR_LINK).click()
+
+        # Ждём возврата на главную
+        WebDriverWait(driver, 15).until(EC.url_to_be(MAIN_URL))
+
+        # Проверяем заголовок
+        assert driver.find_element(*MainPageLocators.BUN_HEADER).is_displayed(), \
+            "Не вернулись в конструктор: заголовок 'Соберите бургер' не отображается"
+
+    def test_navigate_to_constructor_from_cabinet_by_logo(self, driver, logged_in_user):
+        # Клик по логотипу
+        driver.find_element(*MainPageLocators.PERSONAL_CABINET_LINK).click()
+
+        # Ждём загрузки страницы профиля
+        WebDriverWait(driver, 15).until(EC.url_to_be(PROFILE_URL))
+
+        close_modal_if_present(driver)
+
+        # Кликаем по логотипу
+        WebDriverWait(driver, 15).until(EC.element_to_be_clickable(MainPageLocators.LOGO_IMG))
+        driver.find_element(*MainPageLocators.LOGO_IMG).click()
+
+        # Ждём возврата на главную
+        WebDriverWait(driver, 15).until(EC.url_to_be(MAIN_URL))
+
+        # Проверяем заголовок
+        assert driver.find_element(*MainPageLocators.BUN_HEADER).is_displayed(), \
+            "Не вернулись в конструктор: заголовок 'Соберите бургер' не отображается"
+
+    def test_logout_user(self, driver, logged_in_user):
+        # Выход по кнопке «Выйти» в личном кабинете.
+        driver.find_element(*MainPageLocators.PERSONAL_CABINET_LINK).click()
+
+        WebDriverWait(driver, 15).until(EC.url_to_be(PROFILE_URL))
+
+        close_modal_if_present(driver)
+
+        # Находим кнопку выхода и ждём, пока она станет кликабельна
+        logout_btn = WebDriverWait(driver, 15).until(
+            EC.element_to_be_clickable(PersonalCabinetLocators.LOGOUT_BTN)
+        )
+
+        # Клик по кнопке выхода
+        driver.execute_script("arguments[0].click();", logout_btn)
+        print("Клик по кнопке 'Выйти' выполнен через JS.")
+
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD)
+        )
+
+        # Проверка
+        assert "login" in driver.current_url, "Не произошел редирект на страницу входа после выхода"
+        print("Тест пройден: успешный выход из аккаунта.")
