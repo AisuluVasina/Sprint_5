@@ -22,9 +22,6 @@ class TestConstructorTabs:
 
         # ПРОВЕРКА: активная вкладка имеет класс tab_tab_type_current
         buns_element = driver.find_element(*ConstructorLocators.BUNS_TAB)
-        
-        # Используем expected_conditions.presence_of_element_located не подойдет, 
-        # нам нужно именно наличие класса. Проще сделать явную проверку с ожиданием.
         wait.until(lambda d: "tab_tab_type_current" in buns_element.get_attribute("class"))
         
         # Если код дошел сюда, значит класс появился — тест пройден
