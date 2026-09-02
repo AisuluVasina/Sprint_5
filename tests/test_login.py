@@ -74,9 +74,10 @@ class TestLoginScenarios:
             submit_btn.click()
 
             wait_for_url_to_be(driver, MAIN_URL)
+            assert driver.current_url == MAIN_URL, "Не произошёл редирект на главную страницу после входа"
     
     def test_login_via_personal_cabinet_link(self, driver, registered_user):
-          #Вход через ссылку «Личный кабинет»."""
+          #Вход через ссылку «Личный кабинет».
           email, password = registered_user
           
           # Переходим на главную страницу
@@ -105,6 +106,7 @@ class TestLoginScenarios:
   
           # Ждем возврата на главную страницу (это подтверждает успешный вход)
           wait_for_url_to_be(driver, MAIN_URL)
+          assert driver.current_url == MAIN_URL, "Не произошёл редирект на главную страницу после входа"
 
     def test_login_via_registration_form_link(self, driver, registered_user):
         #Вход через ссылку в форме регистрации.
@@ -132,6 +134,7 @@ class TestLoginScenarios:
     
         # Ждем возврата на главную страницу (это подтверждает успешный вход)
         wait_for_url_to_be(driver, MAIN_URL)
+        assert driver.current_url == MAIN_URL, "Не произошёл редирект на главную страницу после входа"
 
     def test_login_via_forgot_password_link(self, driver, registered_user):
         #Вход через ссылку в форме восстановления пароля
@@ -162,3 +165,4 @@ class TestLoginScenarios:
         submit_btn.click()
             
         wait_for_url_to_be(driver, MAIN_URL)
+        assert driver.current_url == MAIN_URL, "Не произошёл редирект на главную страницу после входа"

@@ -10,22 +10,21 @@ from generators import generate_unique_email, generate_password
 from config import REGISTER_URL, LOGIN_URL, MAIN_URL, PROFILE_URL
 
 def close_modal_if_present(driver, timeout=10):
-    # Закрывает модальное окно
     wait = WebDriverWait(driver, timeout)
 
-    # Сначала проверяем, есть ли оверлей
+    # Проверяем наличие оверлея
     try:
         overlay = wait.until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, ".Modal_modal_overlay__x2ZCr")
         ))
     except Exception:
-        # Оверлея нет — ничего не делаем
+        # Оверлея нет — ничего не делаем, это нормально
         return
 
     # Пробуем закрыть кнопкой закрытия
     try:
         close_btn = driver.find_element(
-            By.CSS_SELECTOR, ".Modal_close__..."  # <-- замените на актуальный класс кнопки закрытия
+            By.CSS_SELECTOR, ".Modal_modal__close__TnseK"  # исправлен класс
         )
         if close_btn.is_displayed():
             close_btn.click()
@@ -34,7 +33,7 @@ def close_modal_if_present(driver, timeout=10):
     except Exception:
         pass
 
-    # Пробуем кликнуть по оверлею (часто закрывает модалку)
+    # Пробуем кликнуть по оверлею
     try:
         overlay.click()
         wait.until(EC.invisibility_of_element(overlay))
@@ -42,10 +41,9 @@ def close_modal_if_present(driver, timeout=10):
     except Exception:
         pass
 
-    # Если ничего не помогло — удаляем оверлей через JS
-    print("⚠️ Модальное окно не закрывается стандартными способами. Удаляем через JS.")
-    driver.execute_script("arguments.remove();", overlay)
-    print("✅ Модалка удалена.")
+    # Если ничего не помогло — выбрасываем ошибку, а не удаляем оверлей через JS
+    # Удаление через JS — это «костыль», который скрывает реальные проблемы верстки
+    raise RuntimeError("Не удалось закрыть модальное окно стандартными способами")
 
 @pytest.fixture(params=["chrome", "firefox"])
 def driver(request):
@@ -98,4 +96,3 @@ def safe_click(driver, locator):
         element.click()
     except Exception as e:
         driver.execute_script("arguments[0].click();", element)
-        print(f"Обычный клик не сработал ({type(e).__name__}), используем JS-клик.")

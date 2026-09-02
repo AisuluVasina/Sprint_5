@@ -5,26 +5,26 @@ from generators import generate_unique_email, generate_password
 from locators import RegistrationPageLocators, LoginPageLocators, MainPageLocators, PersonalCabinetLocators
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-# Убран импорт 'driver' из conftest! Он передается в тест автоматически.
 from conftest import close_modal_if_present, registered_user 
 
-class TestRegistration:
+class TestNavigatorRegistrationFlow:
     
     def test_navigate_to_personal_cabinet_as_guest(self, driver, registered_user):
-        #Вход существующего пользователя и переход в личный кабинет.
+
         driver.get(MAIN_URL)
         close_modal_if_present(driver)
 
         wait = WebDriverWait(driver, 15)
 
-        # Клик по кнопке ЛК
+        # Кликаем по кнопке «Личный кабинет»
         profile_btn = wait.until(EC.element_to_be_clickable(MainPageLocators.PERSONAL_CABINET_LINK))
         profile_btn.click()
 
-        # Ожидание и заполнение формы входа
+        # Ждём появления поля Email на странице логина
         email_field_locator = LoginPageLocators.EMAIL_FIELD
         wait.until(EC.visibility_of_element_located(email_field_locator))
 
+        # Вводим данные пользователя
         email, password = registered_user
 
         email_field = wait.until(EC.element_to_be_clickable(email_field_locator))
@@ -39,19 +39,16 @@ class TestRegistration:
         submit_btn.click()
 
         wait.until(EC.url_to_be(MAIN_URL))
-        print(">>> УСПЕХ: Вход выполнен, находимся на главной странице.")
 
-        # Ещё раз кликаем по Личному кабинету
+        # Повторно кликаем по «Личный кабинет», чтобы перейти в профиль
         profile_btn_after_login = wait.until(EC.element_to_be_clickable(MainPageLocators.PERSONAL_CABINET_LINK))
         profile_btn_after_login.click()
 
-        # ПРОВЕРКА
-        try:
-            wait.until(EC.url_to_be(PROFILE_URL))
-            print(">>> УСПЕХ: Переход в личный кабинет подтверждён!")
-        except Exception as e:
-            driver.save_screenshot("profile_navigation_failed.png")
-            raise AssertionError(f"Не удалось перейти в личный кабинет. Текущий URL: {driver.current_url}") from e
+        # Ждём перехода на страницу профиля
+        wait.until(EC.url_to_be(PROFILE_URL))
+
+        # Финальная проверка (assert) 
+        assert driver.current_url == PROFILE_URL, f"Ожидался переход на {PROFILE_URL}, но текущий URL: {driver.current_url}"
 
     def test_navigate_to_constructor_from_cabinet_by_button(self, driver, logged_in_user):
         #Переход из ЛК в конструктор.
@@ -110,7 +107,6 @@ class TestRegistration:
 
         # Клик по кнопке выхода
         driver.execute_script("arguments[0].click();", logout_btn)
-        print("Клик по кнопке 'Выйти' выполнен через JS.")
 
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located(LoginPageLocators.EMAIL_FIELD)
@@ -118,4 +114,3 @@ class TestRegistration:
 
         # Проверка
         assert "login" in driver.current_url, "Не произошел редирект на страницу входа после выхода"
-        print("Тест пройден: успешный выход из аккаунта.")

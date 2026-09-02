@@ -49,19 +49,17 @@ class PersonalCabinetLocators:
     LOGOUT_BTN = By.XPATH, '//button[@type = "button"]'
 
 class ConstructorLocators:
-    # Вкладка "Булки"
-    BUNS_TAB = By.XPATH, '//span[text() = "Булки"]'
-    # Вкладка "Соусы"
-    SAUCES_TAB = By.XPATH, '//span[text() = "Соусы"]'
-    #SAUCES_TAB = (By.XPATH, '//div[contains(text(), "Соусы")]')
-    #SAUCES_TAB = (By.XPATH, '//div[contains(.//text(), "Соусы")]')
-    #SAUCES_TAB = (By.XPATH, '//div[contains(text(), "Соусы")]')
-    # Вкладка "Начинки"
-    TOPPINGS_TAB = By.XPATH, '//span[text() = "Начинки"]'
-    
-    # Первый элемент списка "Булки"
+    # Вкладки (базовые локаторы)
+    BUNS_TAB = (By.XPATH, '//span[text() = "Булки"]')
+    SAUCES_TAB = (By.XPATH, '//span[text() = "Соусы"]')
+    TOPPINGS_TAB = (By.XPATH, '//span[text() = "Начинки"]')
+
+    # Локаторы с проверкой активного класса (для assert)
+    BUNS_TAB = (By.XPATH, "//span[normalize-space()='Булки']/..")
+    SAUCES_TAB = (By.XPATH, "//span[normalize-space()='Соусы']/..")
+    TOPPINGS_TAB = (By.XPATH, "//span[normalize-space()='Начинки']/..")
+
+    # Элементы списков
     FIRST_BUN = ("xpath", "//a[.//img[@alt='Флюоресцентная булка R2-D3']]")
-    # Первый элемент списка "Соусы"
     FIRST_SAUCE = ("xpath", "//a[.//img[@alt='Соус Spicy-X']]")
-    # Первый элемент списка "Начинки"
     FIRST_TOPPING = ("xpath", "//a[.//img[@alt='Мясо бессмертных моллюсков Protostomia']]")
