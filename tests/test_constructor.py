@@ -24,7 +24,7 @@ class TestConstructorTabs:
         buns_element = driver.find_element(*ConstructorLocators.BUNS_TAB)
         wait.until(lambda d: "tab_tab_type_current" in buns_element.get_attribute("class"))
         
-        # Если код дошел сюда, значит класс появился — тест пройден
+        # Класс появился — тест пройден
         assert "tab_tab_type_current" in buns_element.get_attribute("class")
 
     def test_sauces_tab_navigation(self, driver):
