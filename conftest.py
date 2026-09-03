@@ -12,38 +12,35 @@ from config import REGISTER_URL, LOGIN_URL, MAIN_URL, PROFILE_URL
 def close_modal_if_present(driver, timeout=10):
     wait = WebDriverWait(driver, timeout)
 
-    # Проверяем наличие оверлея
+    # Проверяем, есть ли оверлей (фон модалки)
     try:
         overlay = wait.until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, ".Modal_modal_overlay__x2ZCr")
         ))
-    except Exception:
-        # Оверлея нет — ничего не делаем, это нормально
+    except:  # Если оверлея нет — всё в порядке, модалки нет
         return
 
-    # Пробуем закрыть кнопкой закрытия
+    # Пробуем закрыть крестиком
     try:
-        close_btn = driver.find_element(
-            By.CSS_SELECTOR, ".Modal_modal__close__TnseK"  # исправлен класс
-        )
-        if close_btn.is_displayed():
+        close_btn = driver.find_element(By.CSS_SELECTOR, ".Modal_modal__close__TnseK")
+        if close_btn.is_displayed() and close_btn.is_enabled():
             close_btn.click()
             wait.until(EC.invisibility_of_element(overlay))
             return
-    except Exception:
-        pass
+    except:
+        pass  # Идём дальше
 
     # Пробуем кликнуть по оверлею
     try:
         overlay.click()
         wait.until(EC.invisibility_of_element(overlay))
         return
-    except Exception:
-        pass
+    except:
+        pass  # Идём дальше
 
-    # Если ничего не помогло — выбрасываем ошибку, а не удаляем оверлей через JS
-    # Удаление через JS — это «костыль», который скрывает реальные проблемы верстки
-    raise RuntimeError("Не удалось закрыть модальное окно стандартными способами")
+    # Если ни один способ не сработал — это ошибка!
+    raise RuntimeError("Не удалось закрыть модальное окно стандартными способами. "
+                       "Проверьте верстку или наличие бага в UI.")
 
 @pytest.fixture(params=["chrome", "firefox"])
 def driver(request):
