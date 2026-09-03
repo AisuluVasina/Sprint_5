@@ -7,7 +7,6 @@ class MainPageLocators:
     CONSTRUCTOR_LINK = (By.XPATH, "//a[.//p[contains(text(), 'Конструктор')]]")
     # Логотип 
     LOGO_IMG = By.XPATH, '//div[@class="AppHeader_header__logo__2D0X2"]'
-    #LOGO_LINK = (By.CSS_SELECTOR, 'div.AppHeader_header_logo_2D0X2 a[href="/"]') 
     # Элементы модального окна
     MODAL_OVERLAY = (By.CLASS_NAME, "Modal_modal_overlay__x2ZCr")
     MODAL_CLOSE_BUTTON = (By.CLASS_NAME, "Modal_modal__close__TnseK")
